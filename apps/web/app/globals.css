@@ -1,0 +1,284 @@
+ @import "tailwindcss";
+
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
+ }
+
+ @theme inline {
+   --color-background: var(--background);
+   --color-foreground: var(--foreground);
+   --font-sans: var(--font-poppins);
+   --font-mono: var(--font-poppins);
+ }
+
+ @media (prefers-color-scheme: dark) {
+   :root {
+     --background: #0a0a0a;
+     --foreground: #ededed;
+   }
+ }
+
+ body {
+   background: var(--background);
+   color: var(--foreground);
+   font-family: var(--font-poppins), 'Poppins', sans-serif;
+   font-size: 0.9375rem;
+   /* Slightly smaller base font */
+   line-height: 1.5;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+ }
+
+ /* Global reduction of excessive weights */
+ h1,
+ h2,
+ h3,
+ h4,
+ h5,
+ h6 {
+   letter-spacing: -0.01em;
+ }
+
+ .font-black {
+   font-weight: 800 !important;
+   /* Scale down from 900 to 800 */
+ }
+
+ .font-extrabold {
+   font-weight: 700 !important;
+   /* Scale down from 800 to 700 */
+ }
+
+ .font-bold {
+   font-weight: 600 !important;
+   /* Scale down from 700 to 600 */
+ }
+
+ /* Marquee Animation */
+ @keyframes marquee {
+   0% {
+     transform: translateX(0%);
+   }
+
+   100% {
+     transform: translateX(-50%);
+   }
+ }
+
+ .marquee-content {
+   animation: marquee 30s linear infinite;
+ }
+
+ /* Pause on hover (optional) */
+ .marquee-content:hover {
+   animation-play-state: paused;
+ }
+
+ /* Add to globals.css */
+ @keyframes marquee {
+   0% {
+     transform: translateX(0%);
+   }
+
+   100% {
+     transform: translateX(-50%);
+   }
+ }
+
+ .animate-marquee {
+   animation: marquee 20s linear infinite;
+ }
+
+ @utility no-scrollbar {
+   -ms-overflow-style: none;
+   /* IE and Edge */
+   scrollbar-width: none;
+
+   /* Firefox */
+   &::-webkit-scrollbar {
+     display: none;
+     /* Chrome, Safari and Opera */
+   }
+ }
+
+ /* Auth form error shake animation */
+ @keyframes shake {
+
+   0%,
+   100% {
+     transform: translateX(0);
+   }
+
+   10%,
+   30%,
+   50%,
+   70%,
+   90% {
+     transform: translateX(-4px);
+   }
+
+   20%,
+   40%,
+   60%,
+   80% {
+     transform: translateX(4px);
+   }
+ }
+
+ .animate-shake {
+   animation: shake 0.5s ease-in-out;
+ }
+
+ /* Fade-in animation */
+ @keyframes fadeIn {
+   from {
+     opacity: 0;
+     transform: translateY(-8px);
+   }
+
+   to {
+     opacity: 1;
+     transform: translateY(0);
+   }
+ }
+
+ .animate-fadeIn {
+   animation: fadeIn 0.2s ease-out;
+ }
+
+ /* Slide-in from left animation */
+ @keyframes slideInLeft {
+   from {
+     transform: translateX(-100%);
+   }
+
+   to {
+     transform: translateX(0);
+   }
+ }
+
+ .animate-slideInLeft {
+   animation: slideInLeft 0.3s ease-out;
+ }
+
+ /* Rich Content / Product Description Styling */
+ .rich-content {
+   overflow-wrap: anywhere;
+   word-break: normal;
+   /* Better for natural language */
+   word-wrap: break-word;
+   max-width: 100%;
+   hyphens: auto;
+ }
+
+ .rich-content img {
+   max-width: 100% !important;
+   height: auto !important;
+   border-radius: 0.75rem;
+   margin: 1.5rem 0;
+ }
+
+ .rich-content table {
+   display: block;
+   width: 100%;
+   overflow-x: auto;
+   -webkit-overflow-scrolling: touch;
+   border-collapse: collapse;
+   margin: 1rem 0;
+ }
+
+ .rich-content p {
+   margin-bottom: 1rem;
+ }
+
+ .rich-content ul,
+ .rich-content ol {
+   padding-left: 1.5rem;
+   margin-bottom: 1rem;
+ }
+
+ .rich-content li {
+   margin-bottom: 0.5rem;
+ }
+ /* Scrollbar Hide */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Rich Editor */
+.rich-editor-container .ql-toolbar.ql-snow {
+  border: none;
+  border-bottom: 1px solid #f3f4f6;
+  padding: 8px;
+  background: #f9fafb;
+}
+.rich-editor-container .ql-container.ql-snow {
+  border: none;
+  min-height: 150px;
+  font-family: inherit;
+}
+.rich-editor-container .ql-editor {
+  font-size: 0.875rem;
+  color: #374151;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.rich-editor-container .ql-editor.ql-blank::before {
+  color: #9ca3af;
+  font-style: normal;
+}
+
+/* Cart Animations */
+@keyframes cartBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-4px);
+  }
+  60% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-cart-bounce {
+  animation: cartBounce 0.6s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-pulse-gentle {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Cart Item Hover Effects */
+.cart-item-hover {
+  transition: all 0.2s ease-in-out;
+}
+
+.cart-item-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
