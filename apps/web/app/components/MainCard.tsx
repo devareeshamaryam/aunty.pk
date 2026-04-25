@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -42,7 +42,7 @@ export default function DrinkCard({
         <img
           src={imageUrl}
           alt={name}
-          className="h-16 w-16 md:h-44 md:w-auto object-contain"
+          className="h-20 w-20 md:h-48 md:w-auto object-contain"
         />
       </div>
 
@@ -59,17 +59,17 @@ export default function DrinkCard({
         {/* Spacer between title and price */}
         <div className="flex-1 min-h-[16px] md:min-h-[20px]" />
 
-        {/* Price and Add Button - Combined on mobile */}
+        {/* Price and Add Button */}
         <div className="flex flex-col items-center gap-1 mt-2 md:gap-2 md:mt-3">
           {/* Price */}
           <span className="bg-red-500 text-white text-[9px] md:text-[11px] font-bold px-2 md:px-4 py-0.5 md:py-1 rounded-full">
             Rs. {price.toLocaleString()}
           </span>
 
-          {/* Add Button */}
+          {/* Add Button — smaller width & padding */}
           <button
             onClick={handleAdd}
-            className={`w-full md:w-3/5 py-1.5 md:py-3 rounded-full font-bold text-white text-[9px] md:text-sm tracking-wider transition-all duration-200 active:scale-95
+            className={`w-full md:w-2/5 py-1.5 md:py-2 rounded-full font-bold text-white text-[9px] md:text-xs tracking-wider transition-all duration-200 active:scale-95
               ${added ? "bg-green-500" : "bg-teal-500 hover:bg-teal-600"}`}
           >
             {added ? "✓ ADDED!" : "ADD"}

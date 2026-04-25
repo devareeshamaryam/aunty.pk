@@ -1,11 +1,11 @@
-'use client'
+ 'use client'
 
 import { useState, useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import CategoriesBar from '../components/CategoriesBar'
 import SearchBar from '../components/Searchbar'
 import Footer from '../components/Footer'
-
+ 
 export default function HomeLayout({
   children,
 }: {
@@ -29,9 +29,9 @@ export default function HomeLayout({
   }, [lastScrollY])
 
   return (
-    <>
+    <div className="overflow-x-hidden w-full">  {/* 👈 yeh add kiya */}
       {/* Fixed Header Wrapper - Always stays at top */}
-      <div className="fixed top-0 left-0 right-0 z-50">
+      <div className="fixed top-0 left-0 right-0 z-50 overflow-x-hidden">  {/* 👈 overflow-x-hidden add kiya */}
         <div className={`transition-transform duration-500 ease-in-out ${
           isVisible ? 'translate-y-0' : '-translate-y-full'
         }`}>
@@ -42,12 +42,12 @@ export default function HomeLayout({
       </div>
       
       {/* Main content with fixed padding - Never changes */}
-      <main className="pt-[180px] sm:pt-[185px]">
+      <main className="pt-[180px] sm:pt-[185px] overflow-x-hidden">  {/* 👈 overflow-x-hidden add kiya */}
         {children}
       </main>
 
       {/* Footer */}
       <Footer />
-    </>
+    </div>
   )
 }

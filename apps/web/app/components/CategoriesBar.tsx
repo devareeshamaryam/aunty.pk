@@ -47,31 +47,25 @@ const CategoriesBar = () => {
     }
   }, [categories])
 
-  const scrollLeft = () => {
+  const handleScrollLeft = () => {
     scrollRef.current?.scrollBy({ left: -200, behavior: 'smooth' })
   }
 
-  const scrollRight = () => {
+  const handleScrollRight = () => {
     scrollRef.current?.scrollBy({ left: 200, behavior: 'smooth' })
   }
 
   const scrollToSection = (slug: string) => {
     const element = document.getElementById(`category-${slug}`)
     if (element) {
-      element.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      })
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
 
   const scrollToPopular = () => {
     const element = document.getElementById('category-popular')
     if (element) {
-      element.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      })
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
 
@@ -89,22 +83,21 @@ const CategoriesBar = () => {
     <div className="bg-teal-500 shadow-md">
       <div className="flex items-center">
 
-        {/* Left Arrow */}
-        <button
-          onClick={scrollLeft}
-          className={`flex-shrink-0 px-2 py-2 transition-all
-            ${canScrollLeft
-              ? 'text-white opacity-100'
-              : 'text-teal-300 opacity-40 cursor-default'}`}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+        {/* Left Arrow - only render when can scroll left */}
+        {canScrollLeft && (
+          <button
+            onClick={handleScrollLeft}
+            className="flex-shrink-0 px-2 py-2 text-white transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
 
         <div
           ref={scrollRef}
-          className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1 py-2 justify-start"
+          className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1 py-2 px-2"
         >
           <button
             onClick={scrollToPopular}
@@ -124,18 +117,17 @@ const CategoriesBar = () => {
           ))}
         </div>
 
-        {/* Right Arrow */}
-        <button
-          onClick={scrollRight}
-          className={`flex-shrink-0 px-2 py-2 transition-all
-            ${canScrollRight
-              ? 'text-white opacity-100'
-              : 'text-teal-300 opacity-40 cursor-default'}`}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+        {/* Right Arrow - only render when can scroll right */}
+        {canScrollRight && (
+          <button
+            onClick={handleScrollRight}
+            className="flex-shrink-0 px-2 py-2 text-white transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
 
       </div>
     </div>
