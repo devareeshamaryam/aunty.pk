@@ -85,7 +85,10 @@ export default function CategorySection({
   }
 
   return (
-    <section className="bg-gray-50 py-4 mt-6">
+    <section 
+      id={isPopular ? 'category-popular' : `category-${categorySlug}`}
+      className="bg-gray-50 py-4 mt-6"
+    >
       <div className="max-w-7xl mx-auto px-6 md:px-8">
         {/* Section Header */}
         <div className="mb-6">

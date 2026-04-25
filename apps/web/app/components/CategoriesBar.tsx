@@ -55,6 +55,26 @@ const CategoriesBar = () => {
     scrollRef.current?.scrollBy({ left: 200, behavior: 'smooth' })
   }
 
+  const scrollToSection = (slug: string) => {
+    const element = document.getElementById(`category-${slug}`)
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }
+  }
+
+  const scrollToPopular = () => {
+    const element = document.getElementById('category-popular')
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }
+  }
+
   if (loading) {
     return (
       <div className="bg-teal-500 shadow-md py-2">
@@ -86,21 +106,21 @@ const CategoriesBar = () => {
           ref={scrollRef}
           className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1 py-2 justify-start"
         >
-          <Link
-            href="/"
+          <button
+            onClick={scrollToPopular}
             className="flex-shrink-0 px-4 py-1.5 bg-teal-600 hover:bg-teal-700 rounded-md text-white font-bold text-sm uppercase tracking-wide transition-all"
           >
             HOME
-          </Link>
+          </button>
 
           {categories.map((category) => (
-            <Link
+            <button
               key={category._id}
-              href={`/collections/${category.slug}`}
+              onClick={() => scrollToSection(category.slug)}
               className="flex-shrink-0 px-4 py-1.5 bg-teal-600 hover:bg-teal-700 rounded-md text-white font-bold text-sm uppercase tracking-wide transition-all"
             >
               {category.name}
-            </Link>
+            </button>
           ))}
         </div>
 
