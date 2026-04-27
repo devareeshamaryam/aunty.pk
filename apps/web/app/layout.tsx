@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
@@ -12,7 +12,10 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "Aunty.pk - Premium Pakistani Products",
-  description: "Shop authentic Pakistani pickles, chutneys, and more.",
+  description: "Fresh homemade biryani, shami kabab & delicious meals in Multan. Fast delivery, hygienic ingredients, authentic taste. Order now from Aunty.pk today!",
+  alternates: {
+    canonical: "https://www.aunty.pk",
+  },
 };
 
 export default function RootLayout({

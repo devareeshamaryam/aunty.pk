@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Head from 'next/head'
 import CategorySection from '../components/CategorySection'
 import FAQ from '../components/FAQ'
 
@@ -46,27 +47,38 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Popular Items Section - Using same component */}
-      <CategorySection
-        categoryName="Popular Items"
-        isPopular={true}
-      />
-
-      {/* Dynamic Category Sections - Automatically added when you create categories */}
-      {categories.map((category) => (
+    <>
+      <Head>
+        <link rel="canonical" href="https://aunty.pk" />
+        <meta name="description" content="Shop authentic Pakistani homemade food - Biryani, Shami Kabab, and more. Fresh, hygienic, and delivered across Multan." />
+        <meta property="og:title" content="Aunty.pk - Premium Pakistani Homemade Food" />
+        <meta property="og:description" content="Shop authentic Pakistani homemade food - Biryani, Shami Kabab, and more. Fresh, hygienic, and delivered across Multan." />
+        <meta property="og:url" content="https://aunty.pk" />
+        <meta property="og:type" content="website" />
+      </Head>
+      
+      <div className="min-h-screen bg-gray-50">
+        {/* Popular Items Section - Using same component */}
         <CategorySection
-          key={category._id}
-          categoryId={category._id}
-          categoryName={category.name}
-          categorySlug={category.slug}
-          categoryImage={category.image}
-          categoryDescription={category.description}
+          categoryName="Popular Items"
+          isPopular={true}
         />
-      ))}
 
-      {/* FAQ Section */}
-      <FAQ />
-    </div>
+        {/* Dynamic Category Sections - Automatically added when you create categories */}
+        {categories.map((category) => (
+          <CategorySection
+            key={category._id}
+            categoryId={category._id}
+            categoryName={category.name}
+            categorySlug={category.slug}
+            categoryImage={category.image}
+            categoryDescription={category.description}
+          />
+        ))}
+
+        {/* FAQ Section */}
+        <FAQ />
+      </div>
+    </>
   )
 }

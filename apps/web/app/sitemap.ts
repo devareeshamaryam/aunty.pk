@@ -1,25 +1,23 @@
-import { MetadataRoute } from 'next';
+ import { MetadataRoute } from 'next';
 import { fetchProducts, fetchCategories } from './lib/api';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = 'https://www.aunty.pk';
 
-  // Base routes
+  // ✅ Static routes - aunty.pk ke actual pages
   const staticRoutes = [
-    '',
-    '/pickles',
-    '/chutneys',
-    '/murabbas',
-    '/boosters',
-    '/cart',
-  ].map((route) => ({
+    { route: '',            priority: 1.0,  changeFrequency: 'daily'   as const },
+    { route: '/biryani',    priority: 0.9,  changeFrequency: 'daily'   as const },
+    { route: '/shami-kabab',priority: 0.9,  changeFrequency: 'daily'   as const },
+    { route: '/cart',       priority: 0.5,  changeFrequency: 'monthly' as const },
+  ].map(({ route, priority, changeFrequency }) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
-    changeFrequency: 'daily' as const,
-    priority: route === '' ? 1 : 0.8,
+    changeFrequency,
+    priority,
   }));
 
-  // Fetch all products (up to 100 for now)
+  // ✅ Dynamic product pages
   let productEntries: MetadataRoute.Sitemap = [];
   try {
     const { products } = await fetchProducts({ limit: 100 });
@@ -27,13 +25,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/product/${product.slug}`,
       lastModified: product.updatedAt ? new Date(product.updatedAt) : new Date(),
       changeFrequency: 'weekly' as const,
-      priority: 0.7,
+      priority: 0.8,
     }));
   } catch (error) {
     console.error('Sitemap: Failed to fetch products', error);
   }
 
-  // Fetch all categories (collections)
+  // ✅ Dynamic category/collection pages
   let collectionEntries: MetadataRoute.Sitemap = [];
   try {
     const categories = await fetchCategories();
@@ -41,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/collections/${category.slug}`,
       lastModified: category.updatedAt ? new Date(category.updatedAt) : new Date(),
       changeFrequency: 'weekly' as const,
-      priority: 0.6,
+      priority: 0.7,
     }));
   } catch (error) {
     console.error('Sitemap: Failed to fetch categories', error);

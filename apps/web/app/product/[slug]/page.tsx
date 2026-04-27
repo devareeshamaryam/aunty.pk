@@ -1,4 +1,4 @@
-'use client'
+ 'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -25,6 +25,23 @@ export default function ProductDetailPage() {
   const [addedToCart, setAddedToCart] = useState(false)
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description')
   const [lightboxOpen, setLightboxOpen] = useState(false)
+
+  // ✅ Dynamic Canonical Tag - client side pe inject karta hai
+  useEffect(() => {
+    if (slug) {
+      const canonicalUrl = `https://www.aunty.pk/product/${slug}`
+      let link = document.querySelector("link[rel='canonical']") as HTMLLinkElement | null
+
+      if (link) {
+        link.setAttribute('href', canonicalUrl)
+      } else {
+        link = document.createElement('link')
+        link.setAttribute('rel', 'canonical')
+        link.setAttribute('href', canonicalUrl)
+        document.head.appendChild(link)
+      }
+    }
+  }, [slug])
 
   useEffect(() => {
     if (slug) {
@@ -105,7 +122,7 @@ export default function ProductDetailPage() {
     
     const message = `Hi, I want to order:\n\n*${product.name}*${variantText}\nQuantity: ${quantity}\nPrice: Rs. ${(price * quantity).toLocaleString()}\n\nPlease confirm availability.`
     
-    const whatsappNumber = '923105717097' // Replace with your WhatsApp number
+    const whatsappNumber = '923105717097'
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
     
     window.open(whatsappUrl, '_blank')
