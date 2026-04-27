@@ -5,7 +5,8 @@ import Navbar from '../components/Navbar'
 import CategoriesBar from '../components/CategoriesBar'
 import SearchBar from '../components/Searchbar'
 import Footer from '../components/Footer'
- 
+import CartSidebar from '../components/CartSidebar'
+
 export default function HomeLayout({
   children,
 }: {
@@ -13,6 +14,7 @@ export default function HomeLayout({
 }) {
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
+  const [isCartOpen, setIsCartOpen] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,24 +31,26 @@ export default function HomeLayout({
   }, [lastScrollY])
 
   return (
-    <div className="overflow-x-hidden w-full">  {/* 👈 yeh add kiya */}
-      {/* Fixed Header Wrapper - Always stays at top */}
-      <div className="fixed top-0 left-0 right-0 z-50 overflow-x-hidden">  {/* 👈 overflow-x-hidden add kiya */}
+    <div className="w-full">
+      {/* Fixed Header Wrapper */}
+      <div className="fixed top-0 left-0 right-0 z-50">
         <div className={`transition-transform duration-500 ease-in-out ${
           isVisible ? 'translate-y-0' : '-translate-y-full'
         }`}>
-          <Navbar />
+          <Navbar onCartOpen={() => setIsCartOpen(true)} />
           <CategoriesBar />
           <SearchBar />
         </div>
       </div>
-      
-      {/* Main content with fixed padding - Never changes */}
-      <main className="pt-[180px] sm:pt-[185px] overflow-x-hidden">  {/* 👈 overflow-x-hidden add kiya */}
+
+      {/* Cart Sidebar - outside fixed header, directly in body flow */}
+      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+      {/* Main content */}
+      <main className="pt-[180px] sm:pt-[185px]">
         {children}
       </main>
 
-      {/* Footer */}
       <Footer />
     </div>
   )

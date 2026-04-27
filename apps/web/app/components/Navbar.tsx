@@ -7,9 +7,12 @@ import { Search, ShoppingCart, Menu, X, ChevronDown, Phone, User, LogOut, LogIn,
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { fetchCategories, type CategoryItem } from '../lib/api'
-import CartSidebar from './CartSidebar'
 
-const Navbar = () => {
+interface NavbarProps {
+  onCartOpen: () => void
+}
+
+const Navbar = ({ onCartOpen }: NavbarProps) => {
   const { user, isAuthenticated, logout, isLoading } = useAuth()
   const { totalItems } = useCart()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -18,7 +21,6 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isAnnouncementVisible, setIsAnnouncementVisible] = useState(true)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery')
   const [selectedLocation, setSelectedLocation] = useState('')
@@ -102,10 +104,8 @@ const Navbar = () => {
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16 relative">
 
-                {/* ── LEFT: Desktop phone btn | Mobile logo ── */}
+                {/* LEFT */}
                 <div className="flex items-center flex-1 gap-3">
-
-                  {/* Desktop only: phone button */}
                   <a
                     href="tel:03105717097"
                     className="hidden md:flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg transition-all text-sm font-bold shadow-sm"
@@ -114,7 +114,6 @@ const Navbar = () => {
                     <span>0310 5717097</span>
                   </a>
 
-                  {/* Desktop only: location button */}
                   <button
                     onClick={() => setIsLocationOpen(true)}
                     className="hidden md:flex items-center gap-2 text-teal-500 hover:text-teal-600 transition-colors"
@@ -122,7 +121,6 @@ const Navbar = () => {
                     <MapPin className="w-5 h-5" />
                   </button>
 
-                  {/* Mobile only: logo on left */}
                   <Link href="/" className="block group md:hidden">
                     <div
                       className="w-14 h-14 rounded-full overflow-hidden transition-transform duration-300 group-hover:scale-105"
@@ -139,7 +137,7 @@ const Navbar = () => {
                   </Link>
                 </div>
 
-                {/* ── CENTER: Desktop only logo ── */}
+                {/* CENTER */}
                 <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-[40%] z-10">
                   <Link href="/" className="block group">
                     <div
@@ -157,10 +155,8 @@ const Navbar = () => {
                   </Link>
                 </div>
 
-                {/* ── RIGHT: Phone icon (mobile) + Cart ── */}
+                {/* RIGHT */}
                 <div className="flex-1 flex items-center justify-end gap-3">
-
-                  {/* Mobile only: phone icon */}
                   <a
                     href="tel:03105717097"
                     className="md:hidden p-1 text-teal-500 hover:text-teal-600 transition-colors"
@@ -169,9 +165,9 @@ const Navbar = () => {
                     <Phone className="w-6 h-6" />
                   </a>
 
-                  {/* Cart — both */}
+                  {/* Cart button — calls onCartOpen from layout */}
                   <button
-                    onClick={() => setIsCartOpen(true)}
+                    onClick={onCartOpen}
                     className="relative p-1"
                   >
                     <ShoppingCart
@@ -192,21 +188,14 @@ const Navbar = () => {
         </nav>
       </header>
 
-      {/* Cart Sidebar */}
-      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-
       {/* Location Modal */}
       {isLocationOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/30"
             onClick={() => setIsLocationOpen(false)}
           />
-          
-          {/* Modal Box */}
           <div className="relative bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            {/* Close Button */}
             <button
               onClick={() => setIsLocationOpen(false)}
               className="absolute top-3 right-3 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
@@ -214,55 +203,32 @@ const Navbar = () => {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Logo */}
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-full overflow-hidden">
-                <Image
-                  src="/image.png"
-                  alt="Logo"
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-cover"
-                />
+                <Image src="/image.png" alt="Logo" width={64} height={64} className="w-full h-full object-cover" />
               </div>
             </div>
 
-            {/* Title */}
-            <h2 className="text-xl font-bold text-center text-gray-800 mb-4">
-              Select your order type
-            </h2>
+            <h2 className="text-xl font-bold text-center text-gray-800 mb-4">Select your order type</h2>
 
-            {/* Order Type Toggle */}
             <div className="flex gap-2 mb-5">
               <button
                 onClick={() => setOrderType('delivery')}
-                className={`flex-1 py-2.5 rounded-full font-bold text-sm transition-all ${
-                  orderType === 'delivery'
-                    ? 'bg-teal-500 text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
+                className={`flex-1 py-2.5 rounded-full font-bold text-sm transition-all ${orderType === 'delivery' ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-600'}`}
               >
                 DELIVERY
               </button>
               <button
                 onClick={() => setOrderType('pickup')}
-                className={`flex-1 py-2.5 rounded-full font-bold text-sm transition-all ${
-                  orderType === 'pickup'
-                    ? 'bg-teal-500 text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
+                className={`flex-1 py-2.5 rounded-full font-bold text-sm transition-all ${orderType === 'pickup' ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-600'}`}
               >
                 PICK-UP
               </button>
             </div>
 
-            {/* Conditional Content */}
             {orderType === 'pickup' ? (
               <>
-                <p className="text-center text-sm text-gray-600 mb-3">
-                  Which outlet would you like to pick-up from?
-                </p>
-
+                <p className="text-center text-sm text-gray-600 mb-3">Which outlet would you like to pick-up from?</p>
                 <button
                   onClick={handleUseCurrentLocation}
                   className="w-full mb-3 py-2.5 px-4 bg-teal-500 text-white rounded-full font-bold text-sm hover:bg-teal-600 active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -270,7 +236,6 @@ const Navbar = () => {
                   <MapPin className="w-4 h-4" />
                   Use Current Location
                 </button>
-
                 <div className="relative mb-3">
                   <select
                     value={selectedLocation}
@@ -284,34 +249,23 @@ const Navbar = () => {
                     <ChevronDown className="w-4 h-4 text-gray-400" />
                   </div>
                 </div>
-
                 {selectedLocation && (
                   <div className="mb-4 px-4 py-2.5 bg-teal-50 rounded-xl border border-teal-100">
                     <p className="text-xs font-semibold text-teal-600 mb-0.5">Location:</p>
-                    <p className="text-xs text-gray-600">
-                      Multan, Pakistan
-                    </p>
+                    <p className="text-xs text-gray-600">Multan, Pakistan</p>
                   </div>
                 )}
-
                 <button
                   onClick={handleConfirmLocation}
                   disabled={!selectedLocation}
-                  className={`w-full py-2.5 rounded-full font-bold text-white text-sm transition-all ${
-                    selectedLocation
-                      ? 'bg-teal-500 hover:bg-teal-600 active:scale-95'
-                      : 'bg-gray-300 cursor-not-allowed'
-                  }`}
+                  className={`w-full py-2.5 rounded-full font-bold text-white text-sm transition-all ${selectedLocation ? 'bg-teal-500 hover:bg-teal-600 active:scale-95' : 'bg-gray-300 cursor-not-allowed'}`}
                 >
                   Select
                 </button>
               </>
             ) : (
               <>
-                <p className="text-center text-sm text-gray-600 mb-3">
-                  Enter your delivery location
-                </p>
-
+                <p className="text-center text-sm text-gray-600 mb-3">Enter your delivery location</p>
                 <input
                   type="text"
                   value={selectedLocation}
@@ -319,15 +273,10 @@ const Navbar = () => {
                   placeholder="Enter your location"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:border-teal-500 focus:outline-none text-sm mb-4"
                 />
-
                 <button
                   onClick={handleConfirmLocation}
                   disabled={!selectedLocation}
-                  className={`w-full py-2.5 rounded-full font-bold text-white text-sm transition-all ${
-                    selectedLocation
-                      ? 'bg-teal-500 hover:bg-teal-600 active:scale-95'
-                      : 'bg-gray-300 cursor-not-allowed'
-                  }`}
+                  className={`w-full py-2.5 rounded-full font-bold text-white text-sm transition-all ${selectedLocation ? 'bg-teal-500 hover:bg-teal-600 active:scale-95' : 'bg-gray-300 cursor-not-allowed'}`}
                 >
                   Confirm Location
                 </button>
