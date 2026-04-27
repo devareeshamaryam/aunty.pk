@@ -1,9 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { IOrder, IProduct } from '@repo/db';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
-import { AuthService } from '../auth/auth.service';
 import { MailService, OrderMailData } from '../mailer/mail.service';
 
 @Injectable()
@@ -11,7 +10,6 @@ export class OrdersService {
   constructor(
     @InjectModel('Order') private orderModel: Model<IOrder>,
     @InjectModel('Product') private productModel: Model<IProduct>,
-    private authService: AuthService,
     private mailService: MailService,
   ) {}
 
@@ -37,15 +35,6 @@ export class OrdersService {
   }
 
   async create(userId: string | undefined, dto: CreateOrderDto) {
-    let finalUserId = userId;
-    let authData: any = null;
-
-    if (!finalUserId && dto.customerEmail) {
-      const { user, tokens, isNew, tempPassword } = await this.authService.findOrCreateUser(dto.customerEmail, dto.customerName, dto.password);
-      finalUserId = user._id as unknown as string;
-      authData = { ...tokens, isNew, email: user.email, tempPassword };
-    }
-
     let totalAmount = 0;
 
     // Validate products and stock
@@ -55,7 +44,6 @@ export class OrdersService {
         throw new NotFoundException(`Product ${item.name} not found`);
       }
 
-      // Validate stock
       if (item.variantName) {
         const variant = product.variants?.find(v => v.name === item.variantName);
         if (!variant) {
@@ -64,36 +52,32 @@ export class OrdersService {
         if (variant.stock < item.quantity) {
           throw new BadRequestException(`Insufficient stock for ${item.name} (${item.variantName})`);
         }
-        // Reduce variant stock
         variant.stock -= item.quantity;
       } else {
         if (product.stock < item.quantity) {
           throw new BadRequestException(`Insufficient stock for ${item.name}`);
         }
-        // Reduce main stock
         product.stock -= item.quantity;
       }
-      
+
       totalAmount += item.price * item.quantity;
       await product.save();
     }
 
     const order = new this.orderModel({
-      user: finalUserId,
+      // Only attach user if logged in — guest orders have no user
+      ...(userId ? { user: userId } : {}),
       ...dto,
       totalAmount,
     });
 
     const savedOrder = await order.save();
 
-    // ── Send order confirmation email ──
+    // Send order confirmation email
     const mailData = this.buildMailData(savedOrder);
     this.mailService.sendOrderConfirmation(mailData).catch(() => {});
 
-    return {
-      order: savedOrder,
-      auth: authData,
-    };
+    return { order: savedOrder };
   }
 
   async findAll(query: { page?: number; limit?: number; status?: string; user?: string }) {
@@ -154,7 +138,7 @@ export class OrdersService {
     order.status = dto.status;
     const updatedOrder = await order.save();
 
-    // ── Send status update email ──
+    // Send status update email
     const mailData = this.buildMailData(updatedOrder);
     this.mailService.sendOrderStatusEmail(dto.status, mailData).catch(() => {});
 
@@ -165,10 +149,10 @@ export class OrdersService {
     const totalOrders = await this.orderModel.countDocuments();
     const pendingOrders = await this.orderModel.countDocuments({ status: 'PENDING' });
     const deliveredOrders = await this.orderModel.countDocuments({ status: 'DELIVERED' });
-    
+
     const revenue = await this.orderModel.aggregate([
       { $match: { status: { $ne: 'CANCELLED' } } },
-      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
     ]);
 
     const recentOrders = await this.orderModel

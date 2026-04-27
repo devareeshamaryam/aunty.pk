@@ -1,4 +1,4 @@
-'use client'
+ 'use client'
 
 import { useEffect } from 'react'
 import Image from 'next/image'
@@ -66,7 +66,7 @@ export default function ImageLightbox({
       <div className="relative w-full h-full flex items-center justify-center p-16">
         <div className="relative w-full h-full max-w-5xl max-h-[80vh]">
           <Image
-            src={images[currentIndex]}
+            src={images[currentIndex] ?? ''}
             alt={`Image ${currentIndex + 1}`}
             fill
             className="object-contain"

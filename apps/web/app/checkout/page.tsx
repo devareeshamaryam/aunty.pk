@@ -1,4 +1,4 @@
-'use client'
+ 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -31,7 +31,6 @@ export default function CheckoutPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
     }
@@ -72,12 +71,12 @@ export default function CheckoutPage() {
     }
 
     setIsSubmitting(true)
+    setApiError('')
 
     try {
-      // Prepare order data for backend
       const orderData = {
         customerName: `${formData.title} ${formData.fullName}`,
-        customerEmail: formData.email || `${formData.mobile}@temp.com`, // Fallback email if not provided
+        customerEmail: formData.email || `${formData.mobile}@guest.com`,
         items: items.map(item => ({
           product: item.productId,
           name: item.name,
@@ -90,20 +89,15 @@ export default function CheckoutPage() {
           street: formData.address,
           city: formData.city,
           state: formData.area || formData.city,
-          zipCode: '00000', // Default zipcode
+          zipCode: '00000',
           phone: formData.mobile,
         },
         paymentMethod: 'COD' as const,
       }
 
-      console.log('Sending order data:', orderData)
-
-      // Create order in backend
       const response = await createOrder(orderData)
-      
-      console.log('Order created successfully:', response)
 
-      // Create WhatsApp message
+      // Build WhatsApp message
       const orderDetails = items.map(item => 
         `• ${item.name}${item.variant ? ` (${item.variant})` : ''}\n  Qty: ${item.quantity} × Rs. ${item.price.toLocaleString()} = Rs. ${(item.price * item.quantity).toLocaleString()}`
       ).join('\n\n')
@@ -126,11 +120,9 @@ export default function CheckoutPage() {
 
       const whatsappNumber = '923105717097'
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
-      
-      // Open WhatsApp
+
       window.open(whatsappUrl, '_blank')
-      
-      // Clear cart and redirect
+
       setTimeout(() => {
         clearCart()
         router.push(`/order-success?orderId=${response.order._id}`)
@@ -140,7 +132,6 @@ export default function CheckoutPage() {
       console.error('Order creation failed:', error)
       const errorMessage = error.message || 'Failed to create order. Please try again.'
       setApiError(errorMessage)
-      alert(`Failed to create order: ${errorMessage}`)
       setIsSubmitting(false)
     }
   }
@@ -293,7 +284,6 @@ export default function CheckoutPage() {
                     Delivery Address
                   </h3>
 
-                  {/* Address */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Complete Address <span className="text-red-500">*</span>
@@ -313,7 +303,6 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
-                  {/* City & Area */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -386,7 +375,6 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Your Order</h2>
 
-              {/* Order Items */}
               <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
                 {items.map((item) => (
                   <div key={`${item.productId}-${item.variant || ''}`} className="flex gap-3">

@@ -103,7 +103,6 @@ export default function CategorySection({
         {/* Products Grid */}
         {products.length > 0 ? (
           <div className={isPopular
-            /* Mobile: 1 col full width | Desktop: 4 cols full width, no max-w limit */
             ? "grid grid-cols-1 md:grid-cols-4 gap-4 pb-8"
             : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-8"
           }>
@@ -113,8 +112,8 @@ export default function CategorySection({
                   key={product._id}
                   id={product._id}
                   name={product.name}
-                  price={product.variants && product.variants.length > 0 ? product.variants[0].price : product.price}
-                  image={product.images && product.images.length > 0 ? product.images[0] : ''}
+                  price={product.variants?.[0]?.price ?? product.price}
+                  image={product.images?.[0] ?? ''}
                   slug={product.slug}
                   variants={product.variants}
                 />
@@ -122,10 +121,9 @@ export default function CategorySection({
                 <MainCard
                   key={product._id}
                   name={product.name}
-                  price={product.variants && product.variants.length > 0 ? product.variants[0].price : product.price}
-                  imageUrl={product.images && product.images.length > 0 ? product.images[0] : 'https://placehold.co/300x320/f5f5f5/ccc?text=Product'}
+                  price={product.variants?.[0]?.price ?? product.price}
+                  imageUrl={product.images?.[0] ?? 'https://placehold.co/300x320/f5f5f5/ccc?text=Product'}
                   slug={product.slug}
-                  productId={product._id}
                   isPopular={index === 0}
                 />
               )

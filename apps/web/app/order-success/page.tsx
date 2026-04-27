@@ -1,11 +1,11 @@
-'use client'
+ 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { CheckCircle, Package, Home, ShoppingBag } from 'lucide-react'
+import { CheckCircle, Package, Home } from 'lucide-react'
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
@@ -47,7 +47,7 @@ export default function OrderSuccessPage() {
             Order Placed Successfully!
           </h1>
           <p className="text-gray-600 mb-6">
-            Thank you for your order. We've received it and will process it shortly.
+            Thank you for your order. We&apos;ve received it and will process it shortly.
           </p>
 
           {/* Order ID */}
@@ -65,11 +65,11 @@ export default function OrderSuccessPage() {
             <div className="flex items-start gap-3">
               <Package className="text-teal-600 flex-shrink-0 mt-1" size={20} />
               <div>
-                <h3 className="font-semibold text-teal-900 mb-1">What's Next?</h3>
+                <h3 className="font-semibold text-teal-900 mb-1">What&apos;s Next?</h3>
                 <ul className="text-sm text-teal-700 space-y-1">
-                  <li>• We'll confirm your order via WhatsApp</li>
+                  <li>• We&apos;ll confirm your order via WhatsApp</li>
                   <li>• Your order will be prepared for delivery</li>
-                  <li>• You'll receive updates on your order status</li>
+                  <li>• You&apos;ll receive updates on your order status</li>
                   <li>• Pay cash when you receive your order</li>
                 </ul>
               </div>
@@ -85,7 +85,7 @@ export default function OrderSuccessPage() {
               <Home size={20} />
               Continue Shopping
             </Link>
-            
+
             <p className="text-sm text-gray-500">
               Redirecting to home in {countdown} seconds...
             </p>
@@ -103,5 +103,17 @@ export default function OrderSuccessPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin" />
+      </div>
+    }>
+      <OrderSuccessContent />
+    </Suspense>
   )
 }

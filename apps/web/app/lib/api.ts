@@ -1,15 +1,14 @@
-import { getAccessToken, refreshTokens, clearTokens, setTokens } from './auth';
+ import { getAccessToken, getRefreshToken, refreshTokens, clearTokens, setTokens } from './auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
-// Extract base URL safely
 const getBaseUrl = () => {
   try {
     if (API_URL.startsWith('http')) {
       const url = new URL(API_URL);
       return url.origin;
     }
-    return ''; // Relative path like /api
+    return '';
   } catch {
     return '';
   }
@@ -20,20 +19,14 @@ const BASE_URL = getBaseUrl();
 export function getImageUrl(path: string | null | undefined) {
   if (!path) return '/placeholder.jpg';
   if (path.startsWith('http') || path.startsWith('data:')) return path;
-  
-  // If it's the internal placeholder, return as is (relative)
   if (path === '/placeholder.jpg') return path;
-  
-  // Prefix only if it's an API or uploads path and we have a BASE_URL
   if ((path.startsWith('/api/') || path.startsWith('/uploads/')) && BASE_URL) {
     return `${BASE_URL}${path}`;
   }
-  
-  // For any other relative path, ensure it starts with /
   return path.startsWith('/') ? path : `/${path}`;
 }
 
-// Generic public fetch (no auth required)
+// Authenticated fetch (for admin/protected routes)
 export async function apiFetch<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_URL}${endpoint}`;
   const headers: Record<string, string> = {
@@ -41,7 +34,6 @@ export async function apiFetch<T = any>(endpoint: string, options: RequestInit =
     ...((options.headers as Record<string, string>) || {}),
   };
 
-  // Add auth token if available
   const accessToken = getAccessToken();
   if (accessToken) {
     headers['Authorization'] = `Bearer ${accessToken}`;
@@ -49,7 +41,6 @@ export async function apiFetch<T = any>(endpoint: string, options: RequestInit =
 
   const res = await fetch(url, { ...options, headers });
 
-  // If 401 & we have a refresh token, try to refresh
   if (res.status === 401 && getRefreshToken()) {
     const refreshed = await refreshTokens();
     if (refreshed) {
@@ -59,7 +50,6 @@ export async function apiFetch<T = any>(endpoint: string, options: RequestInit =
         const err = await retryRes.json().catch(() => ({ message: retryRes.statusText }));
         throw new Error(err.message || 'Request failed');
       }
-      // Handle 204 No Content
       if (retryRes.status === 204) return {} as T;
       return retryRes.json();
     } else {
@@ -73,9 +63,26 @@ export async function apiFetch<T = any>(endpoint: string, options: RequestInit =
     throw new Error(err.message || 'Request failed');
   }
 
-  // Handle 204 No Content
   if (res.status === 204) return {} as T;
+  return res.json();
+}
 
+// Public fetch — no auth headers, for guest actions like placing orders
+export async function publicApiFetch<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_URL}${endpoint}`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...((options.headers as Record<string, string>) || {}),
+  };
+
+  const res = await fetch(url, { ...options, headers });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(err.message || 'Request failed');
+  }
+
+  if (res.status === 204) return {} as T;
   return res.json();
 }
 
@@ -283,7 +290,6 @@ export async function updateProduct(id: string, data: Omit<Partial<ProductItem>,
   });
 }
 
-
 export async function deleteProduct(id: string): Promise<{ message: string }> {
   return apiFetch(`/products/${id}`, {
     method: 'DELETE',
@@ -359,6 +365,7 @@ export interface OrderStats {
 }
 
 // --- Orders API ---
+// Uses publicApiFetch so no auth token is sent — guest checkout works without login
 export async function createOrder(data: {
   customerName: string;
   customerEmail: string;
@@ -367,7 +374,7 @@ export async function createOrder(data: {
   paymentMethod?: 'COD' | 'STRIPE';
   password?: string;
 }): Promise<{ order: OrderItemResponse; auth?: { access_token: string; refresh_token: string; isNew?: boolean; email?: string; tempPassword?: string } }> {
-  return apiFetch('/orders', {
+  return publicApiFetch('/orders', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -407,7 +414,6 @@ export async function updateOrderStatus(id: string, status: string): Promise<Ord
 export async function fetchOrderStats(): Promise<OrderStats> {
   return apiFetch('/orders/stats');
 }
-
 
 // --- Review types ---
 export interface ReviewItem {

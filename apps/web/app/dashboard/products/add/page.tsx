@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -121,7 +121,6 @@ export default function AddProductPage() {
         throw new Error(`Upload failed: ${mainUploadRes.statusText}`);
       }
       const mainUploadData = await mainUploadRes.json();
-      // Convert relative URL to full URL
       const mainImageUrl = mainUploadData.url.startsWith('http') 
         ? mainUploadData.url 
         : `http://localhost:4000${mainUploadData.url}`;
@@ -139,7 +138,6 @@ export default function AddProductPage() {
         
         if (imgUploadRes.ok) {
           const imgUploadData = await imgUploadRes.json();
-          // Convert relative URL to full URL
           const imgUrl = imgUploadData.url.startsWith('http')
             ? imgUploadData.url
             : `${API_URL}${imgUploadData.url}`;
@@ -148,7 +146,7 @@ export default function AddProductPage() {
       }
 
       // Build variants
-      const variants = [];
+      const variants: { name: string; price: number; stock: number }[] = [];
       if (formData.smallPrice) variants.push({ name: 'Small', price: parseFloat(formData.smallPrice), stock: 100 });
       if (formData.mediumPrice) variants.push({ name: 'Medium', price: parseFloat(formData.mediumPrice), stock: 100 });
       if (formData.largePrice) variants.push({ name: 'Large', price: parseFloat(formData.largePrice), stock: 100 });
@@ -158,7 +156,7 @@ export default function AddProductPage() {
         name: formData.name,
         description: formData.description,
         category: formData.category,
-        price: variants[0].price,
+        price: variants[0]?.price ?? 0,
         stock: 100,
         images: uploadedImages,
         variantType: 'Size',
@@ -182,8 +180,8 @@ export default function AddProductPage() {
       setTimeout(() => {
         router.push('/dashboard/products');
       }, 1500);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create product');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create product');
     } finally {
       setLoading(false);
     }
