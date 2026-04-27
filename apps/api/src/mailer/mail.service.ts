@@ -44,24 +44,33 @@ export class MailService {
     const mailPort = this.configService.get<number>('MAIL_PORT', 587);
     const mailSecure = this.configService.get<string>('MAIL_SECURE', 'false') === 'true';
     const mailUser = this.configService.get<string>('MAIL_USER', '');
+    const mailPass = this.configService.get<string>('MAIL_PASS', '');
 
-    this.transporter = nodemailer.createTransport({
-      host: mailHost,
-      port: mailPort,
-      secure: mailSecure,
-      auth: {
-        user: mailUser,
-        pass: this.configService.get<string>('MAIL_PASS', ''),
-      },
-    });
-
-    // Debug: Log the loaded config on startup
-    this.logger.log(`Mail configured → host=${mailHost}, port=${mailPort}, secure=${mailSecure}, user=${mailUser}, from=${this.fromEmail}, store=${this.storeName}`);
+    // Only create transporter if mail credentials are properly configured
+    if (mailUser && mailPass && mailUser !== 'your@gmail.com') {
+      this.transporter = nodemailer.createTransport({
+        host: mailHost,
+        port: mailPort,
+        secure: mailSecure,
+        auth: {
+          user: mailUser,
+          pass: mailPass,
+        },
+      });
+      this.logger.log(`Mail configured → host=${mailHost}, port=${mailPort}, user=${mailUser}`);
+    } else {
+      this.logger.warn('Mail service not configured - emails will be logged only');
+    }
   }
 
   // ─── ORDER CONFIRMATION (new order placed) ───────────────────────
   async sendOrderConfirmation(data: OrderMailData): Promise<void> {
     try {
+      if (!this.transporter) {
+        this.logger.log(`[DEV MODE] Order confirmation email would be sent to ${data.customerEmail} for order #${data.orderId}`);
+        return;
+      }
+      
       const html = getOrderConfirmationHtml(data, this.storeName);
       await this.transporter.sendMail({
         from: `"${this.storeName}" <${this.fromEmail}>`,
