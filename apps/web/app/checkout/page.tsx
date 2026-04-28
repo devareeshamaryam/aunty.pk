@@ -119,7 +119,7 @@ function useVoiceRecorder() {
       if (!audioBlob) return resolve(null)
       const reader = new FileReader()
       reader.onloadend = () => {
-        const base64 = (reader.result as string).split(',')[1]
+        const base64 = (reader.result as string)?.split(',')[1] ?? null
         resolve(base64)
       }
       reader.readAsDataURL(audioBlob)
