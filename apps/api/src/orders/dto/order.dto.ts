@@ -1,4 +1,4 @@
-import { IsString, IsArray, IsNumber, IsNotEmpty, IsEnum, ValidateNested, IsOptional } from 'class-validator';
+ import { IsString, IsArray, IsNumber, IsNotEmpty, IsEnum, ValidateNested, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class ShippingAddressDto {
@@ -49,6 +49,20 @@ class OrderItemDto {
   variantName?: string;
 }
 
+// ✅ NAYA: Voice message DTO — ye class add karein
+class VoiceMessageDto {
+  @IsString()
+  @IsNotEmpty()
+  data: string; // base64 encoded audio
+
+  @IsString()
+  @IsNotEmpty()
+  mimeType: string; // 'audio/webm'
+
+  @IsNumber()
+  durationSeconds: number;
+}
+
 export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
@@ -75,6 +89,12 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   password?: string;
+
+  // ✅ NAYA: Voice message field — ye add karein
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => VoiceMessageDto)
+  voiceMessage?: VoiceMessageDto;
 }
 
 export class UpdateOrderStatusDto {

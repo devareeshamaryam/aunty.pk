@@ -1,6 +1,6 @@
-'use client';
+ 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   fetchAllOrders,
   updateOrderStatus,
@@ -19,7 +19,128 @@ import {
   XCircle,
   Clock,
   ExternalLink,
+  Mic,
+  Play,
+  Pause,
 } from 'lucide-react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:4000';
+
+// ✅ Voice Player Component
+function VoicePlayer({ voiceMessage }: {
+  voiceMessage: { fileUrl: string; mimeType: string; durationSeconds: number; uploadedAt: string }
+}) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const animRef = useRef<number | null>(null);
+
+  const audioUrl = `${API_URL}${voiceMessage.fileUrl}`;
+
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const togglePlay = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(audioUrl);
+      audioRef.current.onended = () => {
+        setIsPlaying(false);
+        setProgress(0);
+        setCurrentTime(0);
+        if (animRef.current) cancelAnimationFrame(animRef.current);
+      };
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+
+      const update = () => {
+        if (audioRef.current) {
+          const p = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+          setProgress(isNaN(p) ? 0 : p);
+          setCurrentTime(audioRef.current.currentTime);
+          animRef.current = requestAnimationFrame(update);
+        }
+      };
+      animRef.current = requestAnimationFrame(update);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) audioRef.current.pause();
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, []);
+
+  return (
+    <div className="mt-8">
+      <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+        <Mic className="w-3 h-3" />
+        Voice Message
+      </h3>
+
+      <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-100 rounded-2xl p-4">
+        <div className="flex items-center gap-4">
+          {/* Play Button */}
+          <button
+            onClick={togglePlay}
+            className="w-12 h-12 flex-shrink-0 rounded-full bg-teal-500 hover:bg-teal-600 flex items-center justify-center transition-colors shadow-md shadow-teal-200"
+          >
+            {isPlaying
+              ? <Pause className="w-5 h-5 text-white" />
+              : <Play className="w-5 h-5 text-white ml-0.5" />
+            }
+          </button>
+
+          {/* Waveform + Progress */}
+          <div className="flex-1">
+            <div className="flex items-center gap-0.5 h-8 mb-2">
+              {Array.from({ length: 30 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-full transition-colors"
+                  style={{
+                    height: `${25 + Math.sin(i * 0.8) * 12 + Math.cos(i * 0.4) * 8}px`,
+                    backgroundColor: (i / 30) * 100 <= progress ? '#14b8a6' : '#d1fae5',
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full h-1 bg-teal-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-teal-500 rounded-full transition-all duration-100"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Time */}
+          <div className="text-right flex-shrink-0">
+            <p className="text-xs font-mono font-bold text-teal-700">
+              {formatTime(currentTime)} / {formatTime(voiceMessage.durationSeconds)}
+            </p>
+            <p className="text-[10px] text-gray-400 mt-0.5">
+              {new Date(voiceMessage.uploadedAt).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function OrderManagementPage() {
   const [ordersData, setOrdersData] = useState<OrdersResponse | null>(null);
@@ -138,7 +259,15 @@ export default function OrderManagementPage() {
                   {ordersData.orders.map((order) => (
                     <tr key={order._id} className="hover:bg-gray-50/50 transition-colors group">
                       <td className="py-4 px-6">
-                        <span className="text-sm font-mono text-gray-400">#{order._id.slice(-6).toUpperCase()}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-mono text-gray-400">#{order._id.slice(-6).toUpperCase()}</span>
+                          {/* ✅ Voice badge in table */}
+                          {(order as any).voiceMessage && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-teal-50 text-teal-600 rounded-md text-[10px] font-bold">
+                              <Mic className="w-2.5 h-2.5" /> Voice
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 px-6">
                         <div>
@@ -234,6 +363,12 @@ export default function OrderManagementPage() {
                   <span className="text-xs font-mono text-gray-400 px-2 py-1 bg-gray-50 rounded-lg">
                     #{selectedOrder._id.toUpperCase()}
                   </span>
+                  {/* ✅ Voice badge in modal header */}
+                  {(selectedOrder as any).voiceMessage && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-teal-50 text-teal-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                      <Mic className="w-3 h-3" /> Voice
+                    </span>
+                  )}
                 </h2>
                 <p className="text-xs text-gray-500 mt-1">
                   Placed on {new Date(selectedOrder.createdAt).toLocaleString()}
@@ -311,6 +446,11 @@ export default function OrderManagementPage() {
                 </div>
               </div>
 
+              {/* ✅ VOICE MESSAGE PLAYER — agar order mein voice ho to dikhega */}
+              {(selectedOrder as any).voiceMessage && (
+                <VoicePlayer voiceMessage={(selectedOrder as any).voiceMessage} />
+              )}
+
               {/* Order Summary */}
               <div className="mt-8 bg-gray-900 text-white p-6 rounded-[2rem]">
                 <div className="flex justify-between items-center mb-4">
@@ -356,19 +496,10 @@ export default function OrderManagementPage() {
         .animate-scaleUp {
           animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e5e7eb;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #d1d5db;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
       `}</style>
     </div>
   );

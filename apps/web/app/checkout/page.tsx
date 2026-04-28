@@ -1,23 +1,290 @@
  'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, MapPin, Phone, Mail, User, MessageCircle, Package } from 'lucide-react'
+import { ArrowLeft, MapPin, Phone, Mail, User, MessageCircle, Package, Mic, MicOff, Play, Pause, Trash2, CheckCircle } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 import { getImageUrl, createOrder } from '../lib/api'
 import Link from 'next/link'
 
+// ─── Voice Recording Hook ────────────────────────────────────────────────────
+function useVoiceRecorder() {
+  const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'recorded'>('idle')
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+  const [recordingDuration, setRecordingDuration] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [playbackProgress, setPlaybackProgress] = useState(0)
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<BlobEvent['data'][]>([])
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const animationRef = useRef<number | null>(null)
+
+  const MAX_DURATION = 60 // seconds
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      mediaRecorderRef.current = mediaRecorder
+      chunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data)
+      }
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        setAudioBlob(blob)
+        setAudioUrl(URL.createObjectURL(blob))
+        setRecordingState('recorded')
+        stream.getTracks().forEach(t => t.stop())
+      }
+
+      mediaRecorder.start(100)
+      setRecordingState('recording')
+      setRecordingDuration(0)
+
+      timerRef.current = setInterval(() => {
+        setRecordingDuration(prev => {
+          if (prev >= MAX_DURATION - 1) {
+            stopRecording()
+            return MAX_DURATION
+          }
+          return prev + 1
+        })
+      }, 1000)
+    } catch (err) {
+      alert('Microphone access denied. Please allow microphone permission.')
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recordingState === 'recording') {
+      mediaRecorderRef.current.stop()
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }
+
+  const deleteRecording = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
+    if (audioUrl) URL.revokeObjectURL(audioUrl)
+    setAudioUrl(null)
+    setAudioBlob(null)
+    setRecordingState('idle')
+    setRecordingDuration(0)
+    setIsPlaying(false)
+    setPlaybackProgress(0)
+  }
+
+  const togglePlayback = () => {
+    if (!audioUrl) return
+
+    if (!audioRef.current) {
+      audioRef.current = new Audio(audioUrl)
+      audioRef.current.onended = () => {
+        setIsPlaying(false)
+        setPlaybackProgress(0)
+        if (animationRef.current) cancelAnimationFrame(animationRef.current)
+      }
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+      if (animationRef.current) cancelAnimationFrame(animationRef.current)
+    } else {
+      audioRef.current.play()
+      setIsPlaying(true)
+
+      const updateProgress = () => {
+        if (audioRef.current) {
+          const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100
+          setPlaybackProgress(isNaN(progress) ? 0 : progress)
+          animationRef.current = requestAnimationFrame(updateProgress)
+        }
+      }
+      animationRef.current = requestAnimationFrame(updateProgress)
+    }
+  }
+
+  const getBase64 = (): Promise<string | null> => {
+    return new Promise((resolve) => {
+      if (!audioBlob) return resolve(null)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(',')[1]
+        resolve(base64)
+      }
+      reader.readAsDataURL(audioBlob)
+    })
+  }
+
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0')
+    const s = (sec % 60).toString().padStart(2, '0')
+    return `${m}:${s}`
+  }
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+      if (animationRef.current) cancelAnimationFrame(animationRef.current)
+      if (audioUrl) URL.revokeObjectURL(audioUrl)
+    }
+  }, [])
+
+  return {
+    recordingState, audioUrl, audioBlob, recordingDuration,
+    isPlaying, playbackProgress, startRecording, stopRecording,
+    deleteRecording, togglePlayback, getBase64, formatTime, MAX_DURATION
+  }
+}
+
+// ─── Voice Recorder UI Component ─────────────────────────────────────────────
+function VoiceOrderSection({ recorder }: { recorder: ReturnType<typeof useVoiceRecorder> }) {
+  const {
+    recordingState, recordingDuration, isPlaying, playbackProgress,
+    startRecording, stopRecording, deleteRecording, togglePlayback,
+    formatTime, MAX_DURATION
+  } = recorder
+
+  return (
+    <div className="pt-4 border-t border-gray-200">
+      <h3 className="text-base font-semibold text-gray-900 mb-1 flex items-center gap-2">
+        <Mic size={18} className="text-teal-500" />
+        Voice Order Message
+        <span className="text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Optional</span>
+      </h3>
+      <p className="text-xs text-gray-500 mb-4">
+        Record a voice message with your order — special instructions, customization, or anything else.
+      </p>
+
+      {/* IDLE STATE */}
+      {recordingState === 'idle' && (
+        <button
+          type="button"
+          onClick={startRecording}
+          className="w-full flex items-center justify-center gap-3 py-4 rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 hover:bg-teal-100 hover:border-teal-400 transition-all group"
+        >
+          <div className="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Mic size={20} className="text-white" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-semibold text-teal-700">Record a voice message</p>
+            <p className="text-xs text-teal-500">Max {MAX_DURATION} seconds</p>
+          </div>
+        </button>
+      )}
+
+      {/* RECORDING STATE */}
+      {recordingState === 'recording' && (
+        <div className="rounded-xl border-2 border-red-300 bg-red-50 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+              <span className="text-sm font-semibold text-red-700">Recording...</span>
+            </div>
+            <span className="text-sm font-mono text-red-600">
+              {formatTime(recordingDuration)} / {formatTime(MAX_DURATION)}
+            </span>
+          </div>
+
+          <div className="w-full h-1.5 bg-red-200 rounded-full mb-4 overflow-hidden">
+            <div
+              className="h-full bg-red-500 rounded-full transition-all"
+              style={{ width: `${(recordingDuration / MAX_DURATION) * 100}%` }}
+            />
+          </div>
+
+          <div className="flex items-center justify-center gap-0.5 h-8 mb-4">
+            {Array.from({ length: 28 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-1 bg-red-400 rounded-full animate-bounce"
+                style={{
+                  animationDelay: `${(i * 0.07) % 0.5}s`,
+                  animationDuration: `${0.4 + (i % 5) * 0.1}s`,
+                  height: `${20 + Math.sin(i) * 12}px`
+                }}
+              />
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={stopRecording}
+            className="w-full py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold flex items-center justify-center gap-2 transition-colors"
+          >
+            <MicOff size={18} />
+            Stop Recording
+          </button>
+        </div>
+      )}
+
+      {/* RECORDED STATE */}
+      {recordingState === 'recorded' && (
+        <div className="rounded-xl border-2 border-teal-400 bg-teal-50 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle size={18} className="text-teal-600" />
+            <span className="text-sm font-semibold text-teal-700">Voice message recorded!</span>
+            <span className="ml-auto text-xs text-gray-500 font-mono">{formatTime(recordingDuration)}</span>
+          </div>
+
+          <div className="w-full h-1.5 bg-teal-200 rounded-full mb-4 overflow-hidden">
+            <div
+              className="h-full bg-teal-500 rounded-full transition-all duration-100"
+              style={{ width: `${playbackProgress}%` }}
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={togglePlayback}
+              className="flex-1 py-2.5 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-semibold flex items-center justify-center gap-2 transition-colors"
+            >
+              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+              {isPlaying ? 'Pause' : 'Play'}
+            </button>
+            <button
+              type="button"
+              onClick={deleteRecording}
+              className="p-2.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
+              title="Delete recording"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+
+          <p className="text-xs text-teal-600 mt-2 text-center">
+            ✓ This message will be sent with your order
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main Checkout Page ───────────────────────────────────────────────────────
 export default function CheckoutPage() {
   const router = useRouter()
   const { items, totalPrice, clearCart } = useCart()
-  
+  const voiceRecorder = useVoiceRecorder()
+
   const [formData, setFormData] = useState({
-    title: 'Mr',
     fullName: '',
     mobile: '',
     alternateMobile: '',
-    email: '',
     address: '',
     city: '',
     area: '',
@@ -39,9 +306,7 @@ export default function CheckoutPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required'
-    }
+    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required'
 
     if (!formData.mobile.trim()) {
       newErrors.mobile = 'Mobile number is required'
@@ -49,34 +314,25 @@ export default function CheckoutPage() {
       newErrors.mobile = 'Invalid mobile number format (03xxxxxxxxx)'
     }
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email address'
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = 'Delivery address is required'
-    }
-
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required'
-    }
+    if (!formData.address.trim()) newErrors.address = 'Delivery address is required'
+    if (!formData.city.trim()) newErrors.city = 'City is required'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handlePlaceOrder = async () => {
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
     setIsSubmitting(true)
     setApiError('')
 
     try {
+      const voiceMessageBase64 = await voiceRecorder.getBase64()
+
       const orderData = {
-        customerName: `${formData.title} ${formData.fullName}`,
-        customerEmail: formData.email || `${formData.mobile}@guest.com`,
+        customerName: formData.fullName,
+        customerEmail: `${formData.mobile}@guest.com`,
         items: items.map(item => ({
           product: item.productId,
           name: item.name,
@@ -93,26 +349,34 @@ export default function CheckoutPage() {
           phone: formData.mobile,
         },
         paymentMethod: 'COD' as const,
+        ...(voiceMessageBase64 && {
+          voiceMessage: {
+            data: voiceMessageBase64,
+            mimeType: 'audio/webm',
+            durationSeconds: voiceRecorder.recordingDuration,
+          }
+        }),
       }
 
       const response = await createOrder(orderData)
 
-      // Build WhatsApp message
-      const orderDetails = items.map(item => 
+      const orderDetails = items.map(item =>
         `• ${item.name}${item.variant ? ` (${item.variant})` : ''}\n  Qty: ${item.quantity} × Rs. ${item.price.toLocaleString()} = Rs. ${(item.price * item.quantity).toLocaleString()}`
       ).join('\n\n')
 
+      const voiceNote = voiceMessageBase64 ? `\n🎙️ Voice message attached (${voiceRecorder.formatTime(voiceRecorder.recordingDuration)})\n` : ''
+
       const message = `🛍️ *New Order #${response.order._id}*\n\n` +
         `*Customer Details:*\n` +
-        `Name: ${formData.title} ${formData.fullName}\n` +
+        `Name: ${formData.fullName}\n` +
         `Mobile: ${formData.mobile}\n` +
         `${formData.alternateMobile ? `Alternate: ${formData.alternateMobile}\n` : ''}` +
-        `${formData.email ? `Email: ${formData.email}\n` : ''}` +
         `\n*Delivery Address:*\n` +
         `${formData.address}\n` +
         `${formData.area ? `Area: ${formData.area}\n` : ''}` +
         `City: ${formData.city}\n` +
         `${formData.notes ? `\nNotes: ${formData.notes}\n` : ''}` +
+        voiceNote +
         `\n*Order Items:*\n${orderDetails}\n\n` +
         `*Total Amount: Rs. ${totalPrice.toLocaleString()}*\n` +
         `Payment: Cash on Delivery\n\n` +
@@ -120,7 +384,6 @@ export default function CheckoutPage() {
 
       const whatsappNumber = '923105717097'
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
-
       window.open(whatsappUrl, '_blank')
 
       setTimeout(() => {
@@ -130,8 +393,7 @@ export default function CheckoutPage() {
 
     } catch (error: any) {
       console.error('Order creation failed:', error)
-      const errorMessage = error.message || 'Failed to create order. Please try again.'
-      setApiError(errorMessage)
+      setApiError(error.message || 'Failed to create order. Please try again.')
       setIsSubmitting(false)
     }
   }
@@ -177,7 +439,6 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-6">Customer Information</h2>
 
-              {/* API Error Display */}
               {apiError && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-700 font-medium">{apiError}</p>
@@ -185,41 +446,20 @@ export default function CheckoutPage() {
               )}
 
               <div className="space-y-4">
-                {/* Title & Full Name */}
-                <div className="grid grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Title
-                    </label>
-                    <select
-                      name="title"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    >
-                      <option value="Mr">Mr</option>
-                      <option value="Mrs">Mrs</option>
-                      <option value="Ms">Ms</option>
-                    </select>
-                  </div>
-                  <div className="col-span-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      placeholder="Enter your full name"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
-                        errors.fullName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.fullName && (
-                      <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
-                    )}
-                  </div>
+                {/* Full Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    placeholder="Enter your full name"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${errors.fullName ? 'border-red-500' : 'border-gray-300'}`}
+                  />
+                  {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
                 </div>
 
                 {/* Mobile Numbers */}
@@ -234,18 +474,12 @@ export default function CheckoutPage() {
                       value={formData.mobile}
                       onChange={handleInputChange}
                       placeholder="03xx-xxxxxxx"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
-                        errors.mobile ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${errors.mobile ? 'border-red-500' : 'border-gray-300'}`}
                     />
-                    {errors.mobile && (
-                      <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>
-                    )}
+                    {errors.mobile && <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Alternate Mobile Number
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Alternate Mobile Number</label>
                     <input
                       type="tel"
                       name="alternateMobile"
@@ -257,33 +491,12 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Enter your email"
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
-                      errors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                  )}
-                </div>
-
-                {/* Delivery Address Section */}
+                {/* Delivery Address */}
                 <div className="pt-4 border-t border-gray-200">
                   <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <MapPin size={18} className="text-teal-500" />
                     Delivery Address
                   </h3>
-
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Complete Address <span className="text-red-500">*</span>
@@ -294,15 +507,10 @@ export default function CheckoutPage() {
                       onChange={handleInputChange}
                       placeholder="House/Flat no., Street, Landmark"
                       rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
-                        errors.address ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
                     />
-                    {errors.address && (
-                      <p className="text-red-500 text-xs mt-1">{errors.address}</p>
-                    )}
+                    {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
                   </div>
-
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -314,18 +522,12 @@ export default function CheckoutPage() {
                         value={formData.city}
                         onChange={handleInputChange}
                         placeholder="e.g., Karachi, Lahore"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
-                          errors.city ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
                       />
-                      {errors.city && (
-                        <p className="text-red-500 text-xs mt-1">{errors.city}</p>
-                      )}
+                      {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Area/Locality
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Area/Locality</label>
                       <input
                         type="text"
                         name="area"
@@ -340,9 +542,7 @@ export default function CheckoutPage() {
 
                 {/* Delivery Notes */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Delivery Notes (Optional)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Notes (Optional)</label>
                   <textarea
                     name="notes"
                     value={formData.notes}
@@ -352,6 +552,9 @@ export default function CheckoutPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                   />
                 </div>
+
+                {/* VOICE ORDER SECTION */}
+                <VoiceOrderSection recorder={voiceRecorder} />
 
                 {/* Payment Method */}
                 <div className="pt-4 border-t border-gray-200">
@@ -387,15 +590,9 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 line-clamp-2">
-                        {item.name}
-                      </h4>
-                      {item.variant && (
-                        <p className="text-xs text-gray-500">{item.variant}</p>
-                      )}
-                      <p className="text-sm text-gray-600">
-                        {item.quantity} × Rs. {item.price.toLocaleString()}
-                      </p>
+                      <h4 className="text-sm font-medium text-gray-900 line-clamp-2">{item.name}</h4>
+                      {item.variant && <p className="text-xs text-gray-500">{item.variant}</p>}
+                      <p className="text-sm text-gray-600">{item.quantity} × Rs. {item.price.toLocaleString()}</p>
                     </div>
                     <div className="text-sm font-semibold text-gray-900">
                       Rs. {(item.price * item.quantity).toLocaleString()}
@@ -403,6 +600,16 @@ export default function CheckoutPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Voice indicator in summary */}
+              {voiceRecorder.recordingState === 'recorded' && (
+                <div className="flex items-center gap-2 py-2 px-3 bg-teal-50 rounded-lg mb-3">
+                  <Mic size={14} className="text-teal-600" />
+                  <span className="text-xs text-teal-700 font-medium">
+                    Voice message attached ({voiceRecorder.formatTime(voiceRecorder.recordingDuration)})
+                  </span>
+                </div>
+              )}
 
               {/* Totals */}
               <div className="border-t border-gray-200 pt-4 space-y-2">

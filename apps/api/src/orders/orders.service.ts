@@ -4,6 +4,9 @@ import { Model } from 'mongoose';
 import { IOrder, IProduct } from '@repo/db';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { MailService, OrderMailData } from '../mailer/mail.service';
+// ✅ NAYA: File system imports
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class OrdersService {
@@ -31,6 +34,33 @@ export class OrdersService {
       totalAmount: order.totalAmount,
       shippingAddress: order.shippingAddress,
       paymentMethod: order.paymentMethod,
+    };
+  }
+
+  // ✅ NAYA: Voice message save karne ka helper method
+  private saveVoiceMessage(
+    voiceData: { data: string; mimeType: string; durationSeconds: number },
+    orderId: string,
+  ): { fileUrl: string; mimeType: string; durationSeconds: number; uploadedAt: Date } {
+    // uploads/voice-orders/ folder — ye folder automatically ban jayega
+    const uploadDir = path.join(process.cwd(), 'uploads', 'voice-orders');
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const fileName = `voice-${orderId}-${Date.now()}.webm`;
+    const filePath = path.join(uploadDir, fileName);
+
+    // base64 decode karke file disk pe save karein
+    const buffer = Buffer.from(voiceData.data, 'base64');
+    fs.writeFileSync(filePath, buffer);
+
+    return {
+      fileUrl: `/uploads/voice-orders/${fileName}`,
+      mimeType: voiceData.mimeType,
+      durationSeconds: voiceData.durationSeconds,
+      uploadedAt: new Date(),
     };
   }
 
@@ -69,7 +99,15 @@ export class OrdersService {
       ...(userId ? { user: userId } : {}),
       ...dto,
       totalAmount,
+      // ✅ NAYA: voiceMessage ko spread hone se rokein (handle separately)
+      voiceMessage: undefined,
     });
+
+    // ✅ NAYA: Voice message save karna — agar user ne record kiya ho
+    if (dto.voiceMessage) {
+      const savedVoice = this.saveVoiceMessage(dto.voiceMessage, order._id.toString());
+      order.set('voiceMessage', savedVoice);
+    }
 
     const savedOrder = await order.save();
 

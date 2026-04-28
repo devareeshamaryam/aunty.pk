@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+ import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IOrderItem {
   product: Types.ObjectId;
@@ -7,6 +7,14 @@ export interface IOrderItem {
   quantity: number;
   image?: string;
   variantName?: string;
+}
+
+// ✅ NAYA: VoiceMessage interface
+export interface IVoiceMessage {
+  fileUrl: string;
+  mimeType: string;
+  durationSeconds: number;
+  uploadedAt: Date;
 }
 
 export interface IOrder extends Document {
@@ -25,6 +33,7 @@ export interface IOrder extends Document {
   };
   paymentMethod: 'COD' | 'STRIPE';
   paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
+  voiceMessage?: IVoiceMessage; // ✅ NAYA
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,6 +75,13 @@ export const orderSchema = new Schema<IOrder>(
       type: String,
       enum: ['PENDING', 'PAID', 'FAILED'],
       default: 'PENDING',
+    },
+    // ✅ NAYA: Voice message field
+    voiceMessage: {
+      fileUrl: { type: String },
+      mimeType: { type: String },
+      durationSeconds: { type: Number },
+      uploadedAt: { type: Date },
     },
   },
   { timestamps: true }
