@@ -1,10 +1,10 @@
- import TopUpForm from '../../TopUpForm'
- 
+import TopUpForm from '../../TopUpForm'
+
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
- 
-export default function EditTopUpPage({ params }: Props) {
-  return <TopUpForm mode="edit" itemId={params.id} />
+
+export default async function EditTopUpPage({ params }: Props) {
+  const { id } = await params
+  return <TopUpForm mode="edit" itemId={id} />
 }
- 

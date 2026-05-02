@@ -1,16 +1,15 @@
  'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { ArrowLeft, MapPin, Mic, MicOff, Play, Pause, Trash2, CheckCircle, Package, MessageCircle } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 import { getImageUrl, createOrder } from '../lib/api'
 import Link from 'next/link'
-// ✅ Import TopUpSection
 import TopUpSection, { SelectedTopUp, computeTopUpTotal } from '../components/TopUpSection'
 
-// ─── Voice Recording Hook (unchanged) ─────────────────────────────────────────
+// ─── Voice Recording Hook ─────────────────────────────────────────────────────
 function useVoiceRecorder() {
   const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'recorded'>('idle')
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
@@ -101,12 +100,12 @@ function useVoiceRecorder() {
     if (timerRef.current) clearInterval(timerRef.current)
     if (animationRef.current) cancelAnimationFrame(animationRef.current)
     if (audioUrl) URL.revokeObjectURL(audioUrl)
-  }, [])
+  }, [audioUrl])
 
   return { recordingState, audioUrl, audioBlob, recordingDuration, isPlaying, playbackProgress, startRecording, stopRecording, deleteRecording, togglePlayback, getBase64, formatTime, MAX_DURATION }
 }
 
-// ─── Voice UI (unchanged) ─────────────────────────────────────────────────────
+// ─── Voice UI ─────────────────────────────────────────────────────────────────
 function VoiceOrderSection({ recorder }: { recorder: ReturnType<typeof useVoiceRecorder> }) {
   const { recordingState, recordingDuration, isPlaying, playbackProgress, startRecording, stopRecording, deleteRecording, togglePlayback, formatTime, MAX_DURATION } = recorder
   return (
@@ -148,14 +147,13 @@ function VoiceOrderSection({ recorder }: { recorder: ReturnType<typeof useVoiceR
   )
 }
 
-// ─── Main Checkout Page ────────────────────────────────────────────────────────
-export default function CheckoutPage() {
+// ─── Checkout Content (uses useSearchParams) ──────────────────────────────────
+function CheckoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { items, totalPrice, clearCart } = useCart()
   const voiceRecorder = useVoiceRecorder()
 
-  // ── Restore top-ups passed from cart page ─────────────────────────────────
   const [topUpSelected, setTopUpSelected] = useState<SelectedTopUp[]>(() => {
     try {
       const raw = searchParams.get('topups')
@@ -165,12 +163,11 @@ export default function CheckoutPage() {
   const topUpTotal = computeTopUpTotal(topUpSelected)
   const grandTotal = totalPrice + topUpTotal
 
-  // ── Removed: alternateMobile, area ───────────────────────────────────────
   const [formData, setFormData] = useState({
     fullName: '',
     mobile: '',
     address: '',
-    city: 'Multan', // ✅ Pre-selected
+    city: 'Multan',
     notes: '',
   })
   const [locationLoading, setLocationLoading] = useState(false)
@@ -214,6 +211,7 @@ export default function CheckoutPage() {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
   }
+
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [apiError, setApiError] = useState('')
@@ -251,7 +249,6 @@ export default function CheckoutPage() {
             product: item.productId, name: item.name, price: item.price,
             quantity: item.quantity, image: item.image, variantName: item.variant,
           })),
-          // ✅ Include top-up items in order
           ...topUpSelected.map(s => ({
             product: s.item._id, name: s.item.name, price: s.item.price,
             quantity: s.quantity, image: s.item.image, variantName: 'Add-on',
@@ -326,7 +323,6 @@ export default function CheckoutPage() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left: Form + Top-Up */}
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-6">Customer Information</h2>
@@ -339,7 +335,6 @@ export default function CheckoutPage() {
                   {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
                 </div>
 
-                {/* ── Mobile only (alternate removed) ── */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Mobile Number <span className="text-red-500">*</span></label>
                   <input type="tel" name="mobile" value={formData.mobile} onChange={handleInputChange} placeholder="03xx-xxxxxxx" className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent ${errors.mobile ? 'border-red-500' : 'border-gray-300'}`} />
@@ -351,12 +346,7 @@ export default function CheckoutPage() {
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
                       <label className="block text-sm font-medium text-gray-700">Complete Address <span className="text-red-500">*</span></label>
-                      <button
-                        type="button"
-                        onClick={handleGetLocation}
-                        disabled={locationLoading}
-                        className="flex items-center gap-1.5 text-xs font-medium text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-lg transition-all disabled:opacity-60"
-                      >
+                      <button type="button" onClick={handleGetLocation} disabled={locationLoading} className="flex items-center gap-1.5 text-xs font-medium text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-lg transition-all disabled:opacity-60">
                         <MapPin size={13} />
                         {locationLoading ? 'Getting location...' : 'Use My Location'}
                       </button>
@@ -372,15 +362,9 @@ export default function CheckoutPage() {
                     {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
                   </div>
 
-                  {/* ── City dropdown (Multan only), Area removed ── */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">City <span className="text-red-500">*</span></label>
-                    <select
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
-                    >
+                    <select name="city" value={formData.city} onChange={handleInputChange} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white ${errors.city ? 'border-red-500' : 'border-gray-300'}`}>
                       <option value="">Select city</option>
                       <option value="Multan">Multan</option>
                     </select>
@@ -403,11 +387,9 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* ✅ TOP-UP SECTION on checkout too */}
             <TopUpSection onChange={setTopUpSelected} initialSelected={topUpSelected} />
           </div>
 
-          {/* Right: Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Your Order</h2>
@@ -428,7 +410,6 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              {/* ✅ Show selected top-ups in summary */}
               {topUpSelected.length > 0 && (
                 <div className="mb-4 pt-3 border-t border-gray-100">
                   <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Add-ons</p>
@@ -469,5 +450,18 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// ─── Default Export — Suspense wrapper ───────────────────────────────────────
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   )
 }
