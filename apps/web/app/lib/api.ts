@@ -23,7 +23,11 @@ export function getImageUrl(path: string | null | undefined) {
   if ((path.startsWith('/api/') || path.startsWith('/uploads/')) && BASE_URL) {
     return `${BASE_URL}${path}`;
   }
-  return path.startsWith('/') ? path : `/${path}`;
+  // ✅ FIX: relative paths (e.g. "topups/file.png") → BASE_URL/uploads/topups/file.png
+  if (!path.startsWith('/') && BASE_URL) {
+    return `${BASE_URL}/uploads/${path}`;
+  }
+  return path;
 }
 
 // Authenticated fetch (for admin/protected routes)
@@ -365,7 +369,6 @@ export interface OrderStats {
 }
 
 // --- Orders API ---
-// Uses publicApiFetch so no auth token is sent — guest checkout works without login
 export async function createOrder(data: {
   customerName: string;
   customerEmail: string;
@@ -485,4 +488,75 @@ export async function deleteReview(id: string): Promise<{ message: string }> {
   return apiFetch(`/reviews/${id}`, {
     method: 'DELETE',
   });
+}
+
+// ============================================================
+// --- TopUp Item types ---
+// ============================================================
+export interface TopUpItem {
+  _id: string;
+  name: string;
+  description?: string;
+  price: number;
+  image?: string;
+  available: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// --- TopUp Items API ---
+
+// ✅ FIX: publicApiFetch use karo — ye public route hai, auth ki zarurat nahi
+export async function fetchTopUpItems(): Promise<{ success: boolean; items: TopUpItem[] }> {
+  return publicApiFetch('/topup-items');
+}
+
+export async function fetchAdminTopUpItems(): Promise<{ success: boolean; items: TopUpItem[] }> {
+  return apiFetch('/admin/topup-items');
+}
+
+export async function createTopUpItem(formData: FormData): Promise<{ success: boolean; item: TopUpItem }> {
+  const accessToken = getAccessToken();
+  const res = await fetch(`${API_URL}/admin/topup-items`, {
+    method: 'POST',
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      // Content-Type mat lagao — browser khud multipart/form-data set karega
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(err.message || 'TopUp item create karne mein error');
+  }
+  return res.json();
+}
+
+export async function updateTopUpItem(
+  id: string,
+  formData: FormData,
+): Promise<{ success: boolean; item: TopUpItem }> {
+  const accessToken = getAccessToken();
+  const res = await fetch(`${API_URL}/admin/topup-items/${id}`, {
+    method: 'PUT',
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(err.message || 'TopUp item update karne mein error');
+  }
+  return res.json();
+}
+
+export async function toggleTopUpItem(id: string): Promise<{ success: boolean; item: TopUpItem }> {
+  return apiFetch(`/admin/topup-items/${id}/toggle`, { method: 'PATCH' });
+}
+
+export async function deleteTopUpItem(id: string): Promise<{ success: boolean; message: string }> {
+  return apiFetch(`/admin/topup-items/${id}`, { method: 'DELETE' });
 }

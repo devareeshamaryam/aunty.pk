@@ -69,12 +69,24 @@ export class OrdersService {
 
     // Validate products and stock
     for (const item of dto.items) {
+      // ✅ Try to find as Product first, if not found, check if it's a TopUp item
       const product = await this.productModel.findById(item.product);
+      
+      // If it's not a product, it might be a topup item (add-on)
+      // TopUp items don't need stock validation
       if (!product) {
+        // Check if it's a valid TopUp item by checking if variantName is 'Add-on'
+        if (item.variantName === 'Add-on') {
+          // This is a topup item, just add to total and continue
+          totalAmount += item.price * item.quantity;
+          continue;
+        }
+        // If not a topup item and not a product, throw error
         throw new NotFoundException(`Product ${item.name} not found`);
       }
 
-      if (item.variantName) {
+      // Regular product stock validation
+      if (item.variantName && item.variantName !== 'Add-on') {
         const variant = product.variants?.find(v => v.name === item.variantName);
         if (!variant) {
           throw new BadRequestException(`Variant ${item.variantName} not found for ${item.name}`);

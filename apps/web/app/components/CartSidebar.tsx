@@ -7,6 +7,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '../context/CartContext'
 import { getImageUrl } from '../lib/api'
+import TopUpSection, { SelectedTopUp, computeTopUpTotal } from './TopUpSection'
 
 interface CartSidebarProps {
   isOpen: boolean
@@ -16,6 +17,11 @@ interface CartSidebarProps {
 export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
   const { items, totalItems, totalPrice, updateQuantity, removeItem } = useCart()
   const [mounted, setMounted] = useState(false)
+
+  // ── Top-up state ──────────────────────────────────────────────────────
+  const [topUpSelected, setTopUpSelected] = useState<SelectedTopUp[]>([])
+  const topUpTotal = computeTopUpTotal(topUpSelected)
+  const grandTotal = totalPrice + topUpTotal
 
   useEffect(() => {
     setMounted(true)
@@ -65,7 +71,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
           </button>
         </div>
 
-        {/* Cart Items - Scrollable */}
+        {/* Cart Items + TopUp - Scrollable */}
         <div className="flex-1 overflow-y-auto">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12 px-4">
@@ -84,6 +90,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
             </div>
           ) : (
             <div className="p-4 space-y-4">
+              {/* Cart Items */}
               {items.map((item) => (
                 <div
                   key={`${item.productId}-${item.variant || ''}`}
@@ -156,21 +163,43 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                 <Plus size={16} />
                 Add more items
               </Link>
+
+              {/* ✅ TopUp Section — cart items ke neeche */}
+              <div className="pt-2">
+                <TopUpSection onChange={setTopUpSelected} />
+              </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="border-t border-gray-100 bg-white p-4 space-y-4 flex-shrink-0">
-            <div className="flex items-center justify-between">
+          <div className="border-t border-gray-100 bg-white p-4 space-y-3 flex-shrink-0">
+            {/* Subtotal */}
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <span>Subtotal</span>
+              <span>Rs. {totalPrice.toLocaleString()}</span>
+            </div>
+
+            {/* ✅ Add-ons line — sirf tab dikhao jab koi selected ho */}
+            {topUpTotal > 0 && (
+              <div className="flex items-center justify-between text-sm text-gray-500">
+                <span>Add-ons ({topUpSelected.length})</span>
+                <span>Rs. {topUpTotal.toLocaleString()}</span>
+              </div>
+            )}
+
+            {/* Grand Total */}
+            <div className="flex items-center justify-between pt-1 border-t border-gray-100">
               <span className="text-base font-medium text-gray-700">Total</span>
               <span className="text-xl font-bold text-gray-900">
-                Rs. {totalPrice.toLocaleString()}
+                Rs. {grandTotal.toLocaleString()}
               </span>
             </div>
+
+            {/* ✅ Checkout link — topups bhi pass karo */}
             <Link
-              href="/checkout"
+              href={`/checkout?topups=${encodeURIComponent(JSON.stringify(topUpSelected))}`}
               onClick={onClose}
               className="flex items-center justify-center gap-2 w-full bg-teal-500 hover:bg-teal-600 text-white py-3 rounded-lg font-semibold transition-colors shadow-sm"
             >

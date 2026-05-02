@@ -36,7 +36,6 @@ export default function DrinkCard({
       className={`relative bg-white rounded-2xl flex flex-col overflow-hidden transition-all duration-200 cursor-pointer aspect-[4/5] md:aspect-auto
         ${isActive ? "ring-2 ring-teal-500 shadow-lg" : "shadow-sm hover:shadow-md"}`}
     >
-
       {/* Image Area */}
       <div className="bg-white flex items-center justify-center px-3 pt-3 pb-2 flex-1 md:px-6 md:pt-8 md:pb-4 md:min-h-[220px] md:flex-none">
         <img
@@ -66,7 +65,7 @@ export default function DrinkCard({
             Rs. {price.toLocaleString()}
           </span>
 
-          {/* Add Button — smaller width & padding */}
+          {/* Add Button */}
           <button
             onClick={handleAdd}
             className={`w-full md:w-2/5 py-1.5 md:py-2 rounded-full font-bold text-white text-[9px] md:text-xs tracking-wider transition-all duration-200 active:scale-95
@@ -79,6 +78,7 @@ export default function DrinkCard({
     </div>
   );
 
+  // Wrap full card in Link if slug exists
   return slug ? (
     <Link href={`/product/${slug}`} className="block">
       {cardContent}

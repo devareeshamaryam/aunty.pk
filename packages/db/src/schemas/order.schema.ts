@@ -45,7 +45,7 @@ export const orderSchema = new Schema<IOrder>(
     customerEmail: { type: String, required: true },
     items: [
       {
-        product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+        product: { type: Schema.Types.ObjectId, required: true }, // Can be Product or TopUp
         name: { type: String, required: true },
         price: { type: Number, required: true },
         quantity: { type: Number, required: true, min: 1 },

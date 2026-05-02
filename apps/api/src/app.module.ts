@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -11,6 +11,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { OrdersModule } from './orders/orders.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { TopUpModule } from './topup/topup.module'; // ✅ ADD
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AppMailerModule } from './mailer/mailer.module';
 import * as path from 'path';
@@ -20,9 +21,9 @@ import * as path from 'path';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [
-        path.resolve(__dirname, '../.env'),       // apps/api/.env (from dist)
-        path.resolve(process.cwd(), 'apps/api/.env'), // from monorepo root
-        '.env',                                    // fallback: CWD
+        path.resolve(__dirname, '../.env'),
+        path.resolve(process.cwd(), 'apps/api/.env'),
+        '.env',
       ],
     }),
     MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/ecom'),
@@ -34,6 +35,7 @@ import * as path from 'path';
     UploadsModule,
     ReviewsModule,
     AppMailerModule,
+    TopUpModule, // ✅ ADD
   ],
   controllers: [AppController],
   providers: [
