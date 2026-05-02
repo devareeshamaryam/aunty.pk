@@ -33,42 +33,40 @@ export default function DrinkCard({
 
   const cardContent = (
     <div
-      className={`relative bg-white rounded-2xl flex flex-col overflow-hidden transition-all duration-200 cursor-pointer aspect-[4/5] md:aspect-auto
+      className={`relative bg-white rounded-2xl flex flex-col overflow-hidden transition-all duration-200 cursor-pointer
         ${isActive ? "ring-2 ring-teal-500 shadow-lg" : "shadow-sm hover:shadow-md"}`}
     >
       {/* Image Area */}
-      <div className="bg-white flex items-center justify-center px-3 pt-3 pb-2 flex-1 md:px-6 md:pt-8 md:pb-4 md:min-h-[220px] md:flex-none">
+      <div className="bg-white flex items-center justify-center px-4 pt-6 pb-3 min-h-[160px]">
         <img
           src={imageUrl}
           alt={name}
-          className="h-20 w-20 md:h-48 md:w-auto object-contain"
+          className="h-32 w-auto object-contain"
         />
       </div>
 
       {/* Content */}
-      <div className="flex flex-col px-3 pb-3 gap-1 md:flex-1 md:px-5 md:pt-5 md:pb-5 md:gap-2">
-        <h3 className="text-center text-gray-900 font-bold text-xs md:text-[15px] leading-tight line-clamp-1 md:line-clamp-2">
+      <div className="flex flex-col flex-1 px-4 pt-3 pb-4 gap-1.5">
+        <h3 className="text-center text-gray-900 font-bold text-[13px] leading-tight line-clamp-2">
           {name}
         </h3>
 
         {subtitle && (
-          <p className="text-center text-gray-400 text-[9px] md:text-[13px] line-clamp-1">{subtitle}</p>
+          <p className="text-center text-gray-400 text-[11px] line-clamp-1">{subtitle}</p>
         )}
 
-        {/* Spacer between title and price */}
-        <div className="flex-1 min-h-[16px] md:min-h-[20px]" />
+        {/* Spacer */}
+        <div className="flex-1 min-h-[12px]" />
 
         {/* Price and Add Button */}
-        <div className="flex flex-col items-center gap-1 mt-2 md:gap-2 md:mt-3">
-          {/* Price */}
-          <span className="bg-red-500 text-white text-[9px] md:text-[11px] font-bold px-2 md:px-4 py-0.5 md:py-1 rounded-full">
+        <div className="flex flex-col items-center gap-1.5 mt-2">
+          <span className="bg-red-500 text-white text-[10px] font-bold px-3 py-0.5 rounded-full">
             Rs. {price.toLocaleString()}
           </span>
 
-          {/* Add Button */}
           <button
             onClick={handleAdd}
-            className={`w-full md:w-2/5 py-1.5 md:py-2 rounded-full font-bold text-white text-[9px] md:text-xs tracking-wider transition-all duration-200 active:scale-95
+            className={`w-3/5 py-1.5 rounded-full font-bold text-white text-[10px] tracking-wider transition-all duration-200 active:scale-95
               ${added ? "bg-green-500" : "bg-teal-500 hover:bg-teal-600"}`}
           >
             {added ? "✓ ADDED!" : "ADD"}
@@ -78,7 +76,6 @@ export default function DrinkCard({
     </div>
   );
 
-  // Wrap full card in Link if slug exists
   return slug ? (
     <Link href={`/product/${slug}`} className="block">
       {cardContent}

@@ -71,23 +71,23 @@ const CategoriesBar = () => {
 
   if (loading) {
     return (
-      <div className="bg-teal-500 shadow-md py-2">
+      <div className="bg-white md:bg-teal-500 shadow-md py-2">
         <div className="flex items-center px-2">
-          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-teal-500 md:border-white border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-teal-500 shadow-md">
+    <div className="bg-white md:bg-teal-500 shadow-md">
       <div className="flex items-center">
 
         {/* Left Arrow - only render when can scroll left */}
         {canScrollLeft && (
           <button
             onClick={handleScrollLeft}
-            className="flex-shrink-0 px-2 py-2 text-white transition-all"
+            className="flex-shrink-0 px-2 py-2 text-teal-600 md:text-white transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
@@ -121,7 +121,7 @@ const CategoriesBar = () => {
         {canScrollRight && (
           <button
             onClick={handleScrollRight}
-            className="flex-shrink-0 px-2 py-2 text-white transition-all"
+            className="flex-shrink-0 px-2 py-2 text-teal-600 md:text-white transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />

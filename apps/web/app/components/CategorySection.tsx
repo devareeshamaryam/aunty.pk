@@ -71,7 +71,7 @@ export default function CategorySection({
   if (loading) {
     return (
       <section className="bg-gray-50 py-4">
-        <div className="px-4 md:px-6">
+        <div className="px-6 md:px-10">
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin" />
           </div>
@@ -89,7 +89,7 @@ export default function CategorySection({
       id={isPopular ? 'category-popular' : `category-${categorySlug}`}
       className="bg-gray-50 py-4 mt-6"
     >
-      <div className="px-4 md:px-6">
+      <div className="px-6 md:px-10">
         {/* Section Header */}
         <div className="mb-6">
           <h2 className="text-3xl md:text-4xl font-black text-gray-600 mb-2">
@@ -104,7 +104,7 @@ export default function CategorySection({
         {products.length > 0 ? (
           <div className={isPopular
             ? "grid grid-cols-1 md:grid-cols-4 gap-4 pb-8"
-            : "grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-8"
+            : "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-8"
           }>
             {products.map((product, index) => (
               isPopular ? (

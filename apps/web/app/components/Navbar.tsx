@@ -29,11 +29,11 @@ const Navbar = ({ onCartOpen = () => {}, onLocationOpen = () => {} }: NavbarProp
 
   return (
     <>
-      <header className={`transition-all duration-300 ${isScrolled ? 'shadow-xl' : ''}`}>
-        <nav className={`bg-white transition-all duration-300 ${isScrolled ? 'shadow-lg' : 'shadow-md'}`}>
-          <div className="bg-teal-500 md:bg-white border-b border-gray-200">
+      <header className="transition-all duration-300">
+        <nav className={`bg-white transition-all duration-300 ${isScrolled ? 'md:border-b md:border-gray-200' : 'md:border-b md:border-gray-100'}`}>
+          <div className="bg-teal-500 md:bg-white md:border-b md:border-gray-200">
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16 relative">
+              <div className="flex items-center justify-between h-24 md:h-16 relative">
 
                 {/* LEFT */}
                 <div className="flex items-center flex-1 gap-3">
@@ -56,7 +56,7 @@ const Navbar = ({ onCartOpen = () => {}, onLocationOpen = () => {} }: NavbarProp
                       style={{
                         filter: mobileLogoHovered
                           ? 'drop-shadow(0px 7px 0px rgba(0,0,0,0.35)) drop-shadow(0px 14px 20px rgba(0,0,0,0.28)) drop-shadow(0px -1px 3px rgba(255,255,255,0.18))'
-                          : 'drop-shadow(0px 4px 0px rgba(0,0,0,0.30)) drop-shadow(0px 8px 12px rgba(0,0,0,0.22)) drop-shadow(0px -1px 2px rgba(255,255,255,0.12))',
+                          : 'drop-shadow(0px 5px 0px rgba(0,0,0,0.30)) drop-shadow(0px 10px 15px rgba(0,0,0,0.22)) drop-shadow(0px -1px 2px rgba(255,255,255,0.12))',
                         transform: mobileLogoHovered
                           ? 'perspective(300px) rotateX(5deg) scale(1.10)'
                           : 'perspective(300px) rotateX(5deg)',
@@ -65,33 +65,17 @@ const Navbar = ({ onCartOpen = () => {}, onLocationOpen = () => {} }: NavbarProp
                       }}
                     >
                       <Image
-                        src="/image12.png"
+                        src="/image23.png"
                         alt="Aunty.pk Logo"
-                        width={52}
-                        height={52}
-                        className="w-12 h-12 object-contain"
+                        width={300}
+                        height={300}
+                        className="w-28 h-28 object-contain"
                       />
                     </div>
-
-                    {/* Urdu tagline only */}
-                    <span
-                      style={{
-                        fontFamily: '"Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif',
-                        fontSize: '15px',
-                        fontWeight: '700',
-                        color: '#ffffff',
-                        lineHeight: '1.6',
-                        textShadow: '0px 2px 6px rgba(0,0,0,0.25)',
-                        whiteSpace: 'nowrap',
-                        direction: 'rtl',
-                      }}
-                    >
-                      کھانا صرف آنٹی کا
-                    </span>
                   </Link>
                 </div>
 
-                {/* CENTER — Desktop logo UNCHANGED */}
+                {/* CENTER — Desktop logo */}
                 <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-[40%] z-10">
                   <Link href="/" className="block group">
                     <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden transition-transform duration-300 group-hover:scale-105" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))' }}>
@@ -103,10 +87,10 @@ const Navbar = ({ onCartOpen = () => {}, onLocationOpen = () => {} }: NavbarProp
                 {/* RIGHT */}
                 <div className="flex-1 flex items-center justify-end gap-3">
                   <a href="tel:03105717097" className="md:hidden p-1 text-white transition-colors">
-                    <Phone className="w-6 h-6" />
+                    <Phone className="w-7 h-7" />
                   </a>
                   <button onClick={onCartOpen} className="relative p-1">
-                    <ShoppingCart className="w-6 h-6 sm:w-7 sm:h-7 text-white md:text-teal-500 hover:opacity-80 transition-opacity" strokeWidth={2} />
+                    <ShoppingCart className="w-7 h-7 sm:w-7 sm:h-7 text-white md:text-teal-500 hover:opacity-80 transition-opacity" strokeWidth={2} />
                     {totalItems > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md">
                         {totalItems > 99 ? '99+' : totalItems}
