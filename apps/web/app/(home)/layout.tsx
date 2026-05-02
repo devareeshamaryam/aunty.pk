@@ -7,6 +7,7 @@ import SearchBar from '../components/Searchbar'
 import Footer from '../components/Footer'
 import CartSidebar from '../components/CartSidebar'
 import LocationModal from '../components/Locationmodal'
+import FloatingCartBar from '../components/Floatingcartbar'
 
 export default function HomeLayout({
   children,
@@ -39,11 +40,14 @@ export default function HomeLayout({
         onConfirm={() => setIsLocationOpen(false)}
       />
 
-      <main>
+      <main className="pb-24">
         {children}
       </main>
 
       <Footer />
+
+      {/* Floating Cart Bar */}
+      <FloatingCartBar onOpenCart={() => setIsCartOpen(true)} />
     </>
   )
 }
