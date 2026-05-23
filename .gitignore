@@ -55,6 +55,7 @@ apps/cdn/uploads/*
 # Archives
 *.zip
 *.tar.gz
+*.rar
 
 # Coverage
 coverage/

@@ -8,6 +8,7 @@ import { GuestProvider } from "./context/GuestContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import FloatingCartBar from "./components/Floatingcartbar";
 import SilentLocationCapture from "./components/SilentLocationCapture";
+import AnalyticsScripts from "./components/AnalyticsScripts";
 
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700', '800', '900'],
@@ -39,6 +40,7 @@ export default function RootLayout({
         className={`${poppins.variable} antialiased font-sans bg-white`}
         style={{ fontFamily: 'var(--font-poppins)' }}
       >
+        <AnalyticsScripts />
         <AuthProvider>
           <SettingsProvider>
             <GuestProvider>
