@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+# Stray TS compile output in packages/db (root + nested)
+packages/db/index.js
+packages/db/index.d.ts
+packages/db/index.js.map
+packages/db/src/**/*.js
+packages/db/src/**/*.d.ts
+packages/db/src/**/*.js.map
+
+# Turbo
+.turbo
+
+# Environment files - NEVER commit secrets
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+*.env
+!.env.example
+!.env.*.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lint_output.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Uploads (user-generated)
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
+apps/cdn/uploads/*
+!apps/cdn/uploads/.gitkeep
+
+# Archives
+*.zip
+*.tar.gz
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.pem
+.cache/

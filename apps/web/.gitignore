@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build/Next.js outputs
+.next/
+out/
+build/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+*.env
+!.env.example
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Logs
+*.log
